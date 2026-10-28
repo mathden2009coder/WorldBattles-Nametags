@@ -315,6 +315,7 @@ public final class RankSystem {
                 // except Novice, which is the free starter rank. Actual blocking remains separate.
                 tag.putBoolean("WorldBattlesRankBlocked", blocked || (!unlocked && !r.id.equals("novice")));
                 tag.putBoolean("WorldBattlesRankSelected", unlocked && d.selected(player.getUUID()).equals(r.id));
+                tag.putBoolean("WorldBattlesRankOwned", unlocked);
                 ListTag loreTag = new ListTag();
                 for (Component line : lore) loreTag.add(StringTag.valueOf(Component.Serializer.toJson(line)));
                 CompoundTag display = tag.getCompound("display");
