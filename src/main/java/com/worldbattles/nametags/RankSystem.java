@@ -280,7 +280,7 @@ public final class RankSystem {
             Object shop = dataClass.getMethod("get", MinecraftServer.class).invoke(null, player.getServer());
             Object result = dataClass.getMethod("adminSet", UUID.class, String.class, long.class)
                 .invoke(shop, player.getUUID(), player.getGameProfile().getName(), value);
-            Method success = result.getClass().getMethod("success");
+            Method success = result.getClass().getMethod("ok");
             return (boolean) success.invoke(result);
         } catch (Exception ex) {
             return false;
