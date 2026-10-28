@@ -11,5 +11,6 @@ public class WorldBattlesNametags {
     public WorldBattlesNametags() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         ModItems.ITEMS.register(modBus);
+        ModMenus.MENUS.register(modBus);
     }
 }
