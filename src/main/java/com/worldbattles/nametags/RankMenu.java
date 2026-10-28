@@ -24,7 +24,6 @@ public class RankMenu extends AbstractContainerMenu {
             int y = i == 7 ? 66 : 62 + i * 25;
             addSlot(new Slot(ranks, i, x, y) {
                 @Override public boolean mayPlace(ItemStack stack) { return false; }
-                @Override public boolean mayPickup(Player player) { return false; }
             });
         }
         // Balance display is not clickable.
