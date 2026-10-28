@@ -58,10 +58,19 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
             ItemStack stack = menu.getSlot(slotIndex).getItem();
             if (!stack.isEmpty()) {
                 boolean blocked = stack.getTag() != null && stack.getTag().getBoolean("WorldBattlesRankBlocked");
+                boolean selected = stack.getTag() != null && stack.getTag().getBoolean("WorldBattlesRankSelected");
+                if (selected) {
+                    // Orange outline and marker make the currently equipped rank easy to spot.
+                    g.fill(cardX, cardY, cardX + cardW, cardY + 2, 0xFFFF922E);
+                    g.fill(cardX, cardY + cardH - 2, cardX + cardW, cardY + cardH, 0xFFFF922E);
+                    g.fill(cardX, cardY, cardX + 2, cardY + cardH, 0xFFFF922E);
+                    g.fill(cardX + cardW - 2, cardY, cardX + cardW, cardY + cardH, 0xFFFF922E);
+                    g.fill(cardX + cardW - 8, cardY + 5, cardX + cardW - 4, cardY + 9, 0xFFFFB347);
+                }
                 drawLock(g, cardX + 6, cardY + 6,
                     stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()), blocked);
-                g.drawString(font, stack.getHoverName().getString(), cardX + 26, cardY + 2, 0xFF55FF55, false);
-                g.drawString(font, rankPrice(i), cardX + 26, cardY + 16, 0xFFFFC66D, false);
+                g.drawString(font, stack.getHoverName().getString(), cardX + 26, cardY + 2, selected ? 0xFFFFB347 : 0xFF55FF55, false);
+                g.drawString(font, selected ? "✓ ACTIF" : rankPrice(i), cardX + 26, cardY + 16, selected ? 0xFFFF922E : 0xFFFFC66D, false);
             }
         }
 
