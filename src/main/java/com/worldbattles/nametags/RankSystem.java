@@ -25,6 +25,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.ServerChatEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
@@ -135,6 +136,13 @@ public final class RankSystem {
             player.refreshDisplayName();
             player.refreshTabListName();
         }
+    }
+
+    @SubscribeEvent
+    public static void animateRainbowTab(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) return;
+        if (player.tickCount % 5 != 0 || !allowedDimension(player)) return;
+        if ("fou".equals(selected(player))) player.refreshTabListName();
     }
 
     @SubscribeEvent
