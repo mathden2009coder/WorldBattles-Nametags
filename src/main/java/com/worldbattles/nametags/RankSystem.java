@@ -227,104 +227,89 @@ public final class RankSystem {
         return 1;
     }
 
+    private static final int[] RANK_SLOTS = {10, 19, 28, 37, 46, 12, 21, 31};
+
     private static void open(ServerPlayer player) {
         if (!allowedDimension(player)) {
             player.sendSystemMessage(Component.literal("Les grades sont disponibles uniquement dans Freelands et Minage.").withStyle(ChatFormatting.RED));
             return;
         }
-        if (!ModList.get().isLoaded(SHOP_MOD)) {
-            player.sendSystemMessage(Component.literal("Le mod WorldBattles Shop est requis pour acheter des grades.").withStyle(ChatFormatting.RED));
+        RankData d = data(player.getServer());
+        d.ensure(player.getUUID());
+        player.openMenu(new SimpleMenuProvider((id, inv, p) -> {
+            RankMenu menu = new RankMenu(id, inv);
+            long balance = shopBalance(player);
+            menu.setBalance(Math.max(0, balance));
+            for (int i = 0; i < RANKS.length; i++) {
+                Rank r = RANKS[i];
+                if (r.id.equals("admin") && !player.getServer().getPlayerList().isOp(player.getGameProfile())) continue;
+                boolean blocked = d.isBlocked(player.getUUID(), r.id);
+                boolean unlocked = !blocked && (d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile())));
+                ItemStack icon = new ItemStack(unlocked ? ModItems.RANK_LOCK_OPEN.get() : ModItems.RANK_LOCK_CLOSED.get());
+                icon.setHoverName(Component.literal(r.label.toUpperCase(Locale.ROOT)).withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.literal(r.price < 0 ? "Réservé aux administrateurs" : r.price == 0 ? "Prix : Gratuit" : "Prix : " + String.format(Locale.CANADA_FRENCH, "%,d", r.price) + " $").withStyle(ChatFormatting.GOLD));
+                lore.add(Component.literal(blocked ? "Bloqué par un administrateur" : unlocked ? (d.selected(player.getUUID()).equals(r.id) ? "GRADE ACTIF" : "Débloqué — cliquer pour choisir") : "Verrouillé — cliquer pour acheter").withStyle(blocked ? ChatFormatting.RED : unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY));
+                CompoundTag tag = icon.getOrCreateTag();
+                ListTag loreTag = new ListTag();
+                for (Component line : lore) loreTag.add(StringTag.valueOf(Component.Serializer.toJson(line)));
+                CompoundTag display = tag.getCompound("display");
+                display.put("Lore", loreTag);
+                tag.put("display", display);
+                menu.setRankItem(RANK_SLOTS[i], icon);
+            }
+            ItemStack balanceItem = new ItemStack(Items.GOLD_INGOT);
+            balanceItem.setHoverName(Component.literal("Solde : " + String.format(Locale.CANADA_FRENCH, "%,d", Math.max(0, balance)) + " $").withStyle(ChatFormatting.GOLD));
+            menu.setRankItem(4, balanceItem);
+            return menu;
+        }, Component.literal("WORLD BATTLES | GRADES")));
+    }
+
+    public static void handleRankClick(ServerPlayer target, int slot) {
+        int index = -1;
+        for (int i = 0; i < RANK_SLOTS.length; i++) if (RANK_SLOTS[i] == slot) { index = i; break; }
+        if (index < 0) return;
+        Rank r = RANKS[index];
+        if (!allowedDimension(target)) return;
+        RankData current = data(target.getServer());
+        current.ensure(target.getUUID());
+        boolean op = target.getServer().getPlayerList().isOp(target.getGameProfile());
+        if (r.id.equals("admin") && !op) {
+            target.sendSystemMessage(Component.literal("Ce grade est réservé aux administrateurs.").withStyle(ChatFormatting.RED));
+            open(target);
             return;
         }
-        try {
-            Class<?> menuClass = Class.forName("com.worldbattles.shop.ShopMenu");
-            Constructor<?> ctor = menuClass.getConstructor(int.class, net.minecraft.world.entity.player.Inventory.class);
-            MenuProvider provider = new SimpleMenuProvider((id, inv, p) -> {
-                try {
-                    Object menu = ctor.newInstance(id, inv);
-                    Method button = menuClass.getMethod("button", int.class, ItemStack.class, Consumer.class);
-                    RankData d = data(player.getServer());
-                    d.ensure(player.getUUID());
-                    for (int i = 0; i < RANKS.length; i++) {
-                        Rank r = RANKS[i];
-                        // Grille régulière en deux rangées pour éviter l'alignement décalé.
-                        int[] slots = {10, 11, 12, 13, 19, 20, 21, 22};
-                        int slot = slots[i];
-                        boolean blocked = d.isBlocked(player.getUUID(), r.id);
-                        boolean unlocked = !blocked && (d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile())));
-                        ItemStack icon = new ItemStack(unlocked ? ModItems.RANK_LOCK_OPEN.get() : ModItems.RANK_LOCK_CLOSED.get());
-                        MutableComponent title = Component.literal(r.label.toUpperCase(Locale.ROOT))
-                            .withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY);
-                        icon.setHoverName(title);
-                        List<Component> lore = new ArrayList<>();
-                        lore.add(Component.literal(r.price < 0 ? "Grade réservé aux administrateurs" : r.price == 0 ? "Prix : Gratuit" : "Prix : " + String.format(Locale.CANADA_FRENCH, "%,d", r.price) + " $").withStyle(ChatFormatting.GOLD));
-                        lore.add(Component.literal(unlocked ? (d.selected(player.getUUID()).equals(r.id) ? "★ GRADE ACTIF" : "DEBLOQUE - Cliquer pour choisir") : "VERROUILLE - Cliquer pour acheter").withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.RED));
-                        CompoundTag tag = icon.getOrCreateTag();
-                        ListTag loreTag = new ListTag();
-                        for (Component line : lore) loreTag.add(StringTag.valueOf(Component.Serializer.toJson(line)));
-                        CompoundTag display = tag.getCompound("display");
-                        display.put("Lore", loreTag);
-                        tag.put("display", display);
-                        icon.setCount(1);
-                        Consumer<ServerPlayer> action = target -> {
-                            if (!allowedDimension(target)) return;
-                            RankData current = data(target.getServer());
-                            current.ensure(target.getUUID());
-                            boolean op = target.getServer().getPlayerList().isOp(target.getGameProfile());
-                            if (r.id.equals("admin") && !op) {
-                                target.sendSystemMessage(Component.literal("Ce grade est réservé aux administrateurs.").withStyle(ChatFormatting.RED));
-                                open(target);
-                                return;
-                            }
-                            if (current.isBlocked(target.getUUID(), r.id)) {
-                                target.sendSystemMessage(Component.literal("Ce grade a été bloqué par un administrateur.").withStyle(ChatFormatting.RED));
-                                open(target);
-                                return;
-                            }
-                            if (!current.has(target.getUUID(), r.id)) {
-                                if (r.id.equals("admin") || r.price < 0) {
-                                    target.sendSystemMessage(Component.literal("Ce grade ne peut pas être acheté.").withStyle(ChatFormatting.RED));
-                                    open(target);
-                                    return;
-                                }
-                                long balance = shopBalance(target);
-                                if (balance < r.price) {
-                                    target.sendSystemMessage(Component.literal("Fonds insuffisants. Solde : " + balance + " $.").withStyle(ChatFormatting.RED));
-                                    open(target);
-                                    return;
-                                }
-                                if (!setShopBalance(target, balance - r.price)) {
-                                    target.sendSystemMessage(Component.literal("Impossible de débiter le compte du Shop.").withStyle(ChatFormatting.RED));
-                                    open(target);
-                                    return;
-                                }
-                                current.unlock(target.getUUID(), r.id);
-                                target.sendSystemMessage(Component.literal("Grade " + r.label + " acheté pour " + r.price + " $.").withStyle(ChatFormatting.GREEN));
-                            }
-                            current.select(target.getUUID(), r.id);
-                            target.refreshDisplayName();
-                            target.refreshTabListName();
-                            target.getServer().getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(java.util.EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME), java.util.List.of(target)));
-                            target.sendSystemMessage(Component.literal("Grade sélectionné : ").withStyle(ChatFormatting.GOLD).append(Component.literal(r.label).withStyle(r.color)));
-                            open(target);
-                        };
-                        button.invoke(menu, slot, icon, action);
-                    }
-                    ItemStack info = new ItemStack(Items.PAPER);
-                    info.setHoverName(Component.literal("WorldBattles | GRADES").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-                    button.invoke(menu, 4, info, (Consumer<ServerPlayer>) target -> open(target));
-                    ItemStack close = new ItemStack(Items.BARRIER);
-                    close.setHoverName(Component.literal("Fermer").withStyle(ChatFormatting.RED));
-                    button.invoke(menu, 49, close, (Consumer<ServerPlayer>) target -> target.closeContainer());
-                    return (AbstractContainerMenu) menu;
-                } catch (Exception ex) {
-                    throw new RuntimeException("Could not create WorldBattles rank menu", ex);
-                }
-            }, Component.literal("WorldBattles | GRADES"));
-            player.openMenu(provider);
-        } catch (Exception ex) {
-            player.sendSystemMessage(Component.literal("Erreur lors de l'ouverture des grades. Vérifie que WorldBattles Shop 0.2.2 est installé.").withStyle(ChatFormatting.RED));
+        if (current.isBlocked(target.getUUID(), r.id)) {
+            target.sendSystemMessage(Component.literal("Ce grade a été bloqué par un administrateur.").withStyle(ChatFormatting.RED));
+            open(target);
+            return;
         }
+        if (!current.has(target.getUUID(), r.id)) {
+            if (r.id.equals("admin") || r.price < 0) {
+                target.sendSystemMessage(Component.literal("Ce grade ne peut pas être acheté.").withStyle(ChatFormatting.RED));
+                open(target);
+                return;
+            }
+            long balance = shopBalance(target);
+            if (balance < r.price) {
+                target.sendSystemMessage(Component.literal("Fonds insuffisants. Solde : " + Math.max(0, balance) + " $.").withStyle(ChatFormatting.RED));
+                open(target);
+                return;
+            }
+            if (!setShopBalance(target, balance - r.price)) {
+                target.sendSystemMessage(Component.literal("Impossible de débiter le compte du Shop.").withStyle(ChatFormatting.RED));
+                open(target);
+                return;
+            }
+            current.unlock(target.getUUID(), r.id);
+            target.sendSystemMessage(Component.literal("Grade " + r.label + " acheté pour " + r.price + " $.").withStyle(ChatFormatting.GREEN));
+        }
+        current.select(target.getUUID(), r.id);
+        target.refreshDisplayName();
+        target.refreshTabListName();
+        target.getServer().getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(java.util.EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME), java.util.List.of(target)));
+        target.sendSystemMessage(Component.literal("Grade sélectionné : ").withStyle(ChatFormatting.GOLD).append(Component.literal(r.label).withStyle(r.color)));
+        open(target);
     }
 
     private static long shopBalance(ServerPlayer player) {
