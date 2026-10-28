@@ -17,16 +17,29 @@ public class RankMenu extends AbstractContainerMenu {
         addDataSlot(balance);
         for (int row = 0; row < 6; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(ranks, col + row * 9, 8 + col * 18, 18 + row * 18) {
+                int index = col + row * 9;
+                int x = 8 + col * 18;
+                int y = 18 + row * 18;
+                if (index == 4) { x = 142; y = 8; }
+                else if (index == 10) { x = 10; y = 38; }
+                else if (index == 19) { x = 10; y = 56; }
+                else if (index == 28) { x = 10; y = 74; }
+                else if (index == 37) { x = 10; y = 92; }
+                else if (index == 46) { x = 10; y = 110; }
+                else if (index == 12) { x = 10; y = 128; }
+                else if (index == 21) { x = 10; y = 146; }
+                else if (index == 31) { x = 104; y = 38; }
+                else { x = -1000; y = -1000; }
+                this.addSlot(new Slot(ranks, index, x, y) {
                     @Override public boolean mayPlace(ItemStack stack) { return false; }
                     @Override public boolean mayPickup(Player player) { return false; }
                 });
             }
         }
         for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 140 + row * 18));
+            for (int col = 0; col < 9; col++) this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 168 + row * 18));
         }
-        for (int col = 0; col < 9; col++) this.addSlot(new Slot(inventory, col, 8 + col * 18, 198));
+        for (int col = 0; col < 9; col++) this.addSlot(new Slot(inventory, col, 8 + col * 18, 222));
     }
 
     public void setRankItem(int slot, ItemStack stack) { ranks.setItem(slot, stack); }
