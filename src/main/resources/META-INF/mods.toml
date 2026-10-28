@@ -8,3 +8,10 @@ version="0.1.0"
 displayName="WorldBattles Nametags"
 authors="WorldBattles"
 description='''Hides player name tags only in the vanilla Overworld. Name tags remain visible in Freelands and Minage.'''
+
+[[dependencies.worldbattles_nametags]]
+modId="worldbattlesshop"
+mandatory=true
+versionRange="[0.2.2,)"
+ordering="AFTER"
+side="BOTH"
