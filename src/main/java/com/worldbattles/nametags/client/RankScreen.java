@@ -38,7 +38,7 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
 
         g.drawString(font, "WORLD BATTLES", x + 20, y + 20, 0xFFE6EDF7, false);
         g.drawString(font, "GRADES", x + 166, y + 20, 0xFFFFB34D, false);
-        g.drawString(font, "SOLDE : " + String.format(java.util.Locale.CANADA_FRENCH, "%,d", menu.getBalance()) + " $",
+        g.drawString(font, "SOLDE : " + (menu.getBalance() < 0 ? "INDISPONIBLE" : String.format(java.util.Locale.CANADA_FRENCH, "%,d", menu.getBalance()) + " $"),
             x + 20, y + 36, 0xFFFFB34D, false);
 
         // Rank cards are custom panels. Only item icons are drawn from the menu;
