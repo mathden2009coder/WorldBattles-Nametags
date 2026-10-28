@@ -43,7 +43,7 @@ public class RankMenu extends AbstractContainerMenu {
     }
 
     public void setRankItem(int slot, ItemStack stack) { ranks.setItem(slot, stack); }
-    public void setBalance(long value) { balance.set((int)Math.max(0, Math.min(Integer.MAX_VALUE, value))); }
+    public void setBalance(long value) { balance.set((int)Math.max(-1, Math.min(Integer.MAX_VALUE, value))); }
     public int getBalance() { return balance.get(); }
 
     @Override
