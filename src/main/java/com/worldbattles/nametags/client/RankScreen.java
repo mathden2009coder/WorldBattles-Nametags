@@ -13,8 +13,8 @@ import org.lwjgl.glfw.GLFW;
  * click channel; vanilla slot/chest rendering is deliberately never invoked.
  */
 public class RankScreen extends AbstractContainerScreen<RankMenu> {
-    private static final int PANEL_W = 300;
-    private static final int PANEL_H = 360;
+    private static final int PANEL_W = 260;
+    private static final int PANEL_H = 320;
 
     public RankScreen(RankMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -36,37 +36,37 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
         g.fill(x + 12, y + 12, x + PANEL_W - 12, y + 48, 0xFF17263A);
         g.fill(x + 12, y + 51, x + PANEL_W - 12, y + 52, 0xFF34465B);
 
-        g.drawString(font, "WORLD BATTLES", x + 20, y + 20, 0xFFE6EDF7, false);
-        g.drawString(font, "GRADES", x + 166, y + 20, 0xFFFFB34D, false);
+        g.drawString(font, "WORLD BATTLES", x + 12, y + 18, 0xFFE6EDF7, false);
+        g.drawString(font, "GRADES", x + 142, y + 18, 0xFFFFB34D, false);
         g.drawString(font, "SOLDE : " + (menu.getBalance() < 0 ? "INDISPONIBLE" : String.format(java.util.Locale.CANADA_FRENCH, "%,d", menu.getBalance()) + " $"),
-            x + 20, y + 36, 0xFFFFB34D, false);
+            x + 12, y + 36, 0xFFFFB34D, false);
 
         // Rank cards are custom panels. Only item icons are drawn from the menu;
         // no vanilla slot frames or inventory grid are rendered.
         for (int i = 0; i < 8; i++) {
             int slotIndex = i;
-            int cardX = i == 7 ? x + 174 : x + 18;
-            int cardY = i == 7 ? y + 72 : y + 62 + i * 36;
-            int cardW = i == 7 ? 108 : 150;
-            int cardH = 32;
+            int cardX = i == 7 ? x + 150 : x + 14;
+            int cardY = i == 7 ? y + 68 : y + 58 + i * 32;
+            int cardW = i == 7 ? 96 : 136;
+            int cardH = 28;
             boolean hover = mouseX >= cardX && mouseX < cardX + cardW && mouseY >= cardY && mouseY < cardY + cardH;
             g.fill(cardX, cardY, cardX + cardW, cardY + cardH, hover ? 0xFF34465B : 0xFF1B2A3D);
             g.fill(cardX, cardY, cardX + 3, cardY + cardH, i == 7 ? 0xFFFF922E : 0xFF526982);
             ItemStack stack = menu.getSlot(slotIndex).getItem();
             if (!stack.isEmpty()) {
-                drawLock(g, cardX + 8, cardY + 8, stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()));
-                g.drawString(font, stack.getHoverName().getString(), cardX + 30, cardY + 4, 0xFF55FF55, false);
-                g.drawString(font, rankPrice(i), cardX + 30, cardY + 19, 0xFFFFC66D, false);
+                drawLock(g, cardX + 6, cardY + 6, stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()));
+                g.drawString(font, stack.getHoverName().getString(), cardX + 26, cardY + 2, 0xFF55FF55, false);
+                g.drawString(font, rankPrice(i), cardX + 26, cardY + 16, 0xFFFFC66D, false);
             }
         }
 
-        g.fill(x + 12, y + 328, x + PANEL_W - 12, y + 329, 0xFF34465B);
-        g.drawString(font, "Clique sur un grade pour le choisir", x + 20, y + 338, 0xFF9CAFC4, false);
-        int bx = x + PANEL_W - 74;
-        int by = y + PANEL_H - 24;
-        boolean closeHover = mouseX >= bx && mouseX < bx + 56 && mouseY >= by && mouseY < by + 16;
+        g.fill(x + 12, y + 290, x + PANEL_W - 12, y + 291, 0xFF34465B);
+        g.drawString(font, "Clique sur un grade pour le choisir", x + 12, y + 300, 0xFF9CAFC4, false);
+        int bx = x + PANEL_W - 68;
+        int by = y + PANEL_H - 22;
+        boolean closeHover = mouseX >= bx && mouseX < bx + 54 && mouseY >= by && mouseY < by + 16;
         g.fill(bx, by, bx + 56, by + 16, closeHover ? 0xFF9A3D32 : 0xFF542B2B);
-        g.drawString(font, "FERMER", bx + 6, by + 4, 0xFFFFFFFF, false);
+        g.drawString(font, "FERMER", bx + 4, by + 4, 0xFFFFFFFF, false);
 
         // Preserve vanilla packet-based slot clicks without rendering its chest UI.
         // Inventory slots are not drawn or exposed in this screen.
@@ -112,10 +112,10 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
             int x = (width - PANEL_W) / 2;
             int y = (height - PANEL_H) / 2;
             for (int i = 0; i < 8; i++) {
-                int cardX = i == 7 ? x + 174 : x + 18;
-                int cardY = i == 7 ? y + 66 : y + 62 + i * 25;
-                int cardW = i == 7 ? 108 : 150;
-                if (mouseX >= cardX && mouseX < cardX + cardW && mouseY >= cardY && mouseY < cardY + 22) {
+                int cardX = i == 7 ? x + 150 : x + 14;
+                int cardY = i == 7 ? y + 68 : y + 58 + i * 32;
+                int cardW = i == 7 ? 96 : 136;
+                if (mouseX >= cardX && mouseX < cardX + cardW && mouseY >= cardY && mouseY < cardY + 28) {
                     if (minecraft != null && minecraft.gameMode != null && minecraft.player != null) {
                         minecraft.gameMode.handleInventoryMouseClick(menu.containerId, i, 0,
                             net.minecraft.world.inventory.ClickType.PICKUP, minecraft.player);
@@ -123,9 +123,9 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
                     return true;
                 }
             }
-            int bx = x + PANEL_W - 74;
+            int bx = x + PANEL_W - 68;
             int by = y + PANEL_H - 24;
-            if (mouseX >= bx && mouseX < bx + 56 && mouseY >= by && mouseY < by + 16) onClose();
+            if (mouseX >= bx && mouseX < bx + 54 && mouseY >= by && mouseY < by + 16) onClose();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
