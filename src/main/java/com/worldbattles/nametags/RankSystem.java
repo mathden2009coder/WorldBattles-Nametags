@@ -155,14 +155,16 @@ public final class RankSystem {
 
     @SubscribeEvent
     public static void onNameFormat(NameFormat event) {
-        if (!(event.getEntity() instanceof Player player) || !allowedDimension(player)) return;
+        Player player = event.getEntity();
+        if (!allowedDimension(player)) return;
         Component base = event.getUsername();
         event.setDisplayname(prefixFor(player).copy().append(base));
     }
 
     @SubscribeEvent
     public static void onTabName(TabListNameFormat event) {
-        if (!(event.getEntity() instanceof Player player) || !allowedDimension(player)) return;
+        Player player = event.getEntity();
+        if (!allowedDimension(player)) return;
         Component base = Component.literal(player.getGameProfile().getName());
         event.setDisplayName(prefixFor(player).copy().append(base));
     }
