@@ -36,10 +36,13 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
         g.fill(x + 12, y + 12, x + PANEL_W - 12, y + 48, 0xFF17263A);
         g.fill(x + 12, y + 51, x + PANEL_W - 12, y + 52, 0xFF34465B);
 
-        g.drawString(font, "WORLD BATTLES", x + 12, y + 18, 0xFFE6EDF7, false);
-        g.drawString(font, "GRADES", x + 142, y + 18, 0xFFFFB34D, false);
-        g.drawString(font, "SOLDE : " + (menu.getBalance() < 0 ? "INDISPONIBLE" : String.format(java.util.Locale.CANADA_FRENCH, "%,d", menu.getBalance()) + " $"),
-            x + 12, y + 36, 0xFFFFB34D, false);
+        g.drawString(font, "WORLD BATTLES", x + 12, y + 17, 0xFFE6EDF7, false);
+        g.drawString(font, "GRADES", x + 142, y + 17, 0xFFFF922E, false);
+        g.drawString(font, "SOLDE DU SHOP", x + 12, y + 34, 0xFF9CAFC4, false);
+        String balanceText = menu.getBalance() < 0 ? "INDISPONIBLE"
+            : String.format(java.util.Locale.FRANCE, "%,d", menu.getBalance()).replace('\u202f', ' ') + " $";
+        g.drawString(font, balanceText, x + 100, y + 34,
+            menu.getBalance() < 0 ? 0xFFFF6B6B : 0xFFFFB34D, false);
 
         // Rank cards are custom panels. Only item icons are drawn from the menu;
         // no vanilla slot frames or inventory grid are rendered.
@@ -54,7 +57,9 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
             g.fill(cardX, cardY, cardX + 3, cardY + cardH, i == 7 ? 0xFFFF922E : 0xFF526982);
             ItemStack stack = menu.getSlot(slotIndex).getItem();
             if (!stack.isEmpty()) {
-                drawLock(g, cardX + 6, cardY + 6, stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()));
+                boolean blocked = stack.getTag() != null && stack.getTag().getBoolean("WorldBattlesRankBlocked");
+                drawLock(g, cardX + 6, cardY + 6,
+                    stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()), blocked);
                 g.drawString(font, stack.getHoverName().getString(), cardX + 26, cardY + 2, 0xFF55FF55, false);
                 g.drawString(font, rankPrice(i), cardX + 26, cardY + 16, 0xFFFFC66D, false);
             }
@@ -86,14 +91,17 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
         };
     }
 
-    private void drawLock(GuiGraphics g, int x, int y, boolean open) {
+    private void drawLock(GuiGraphics g, int x, int y, boolean open, boolean blocked) {
         int shackle = open ? x + 7 : x + 4;
-        g.fill(shackle, y, shackle + 8, y + 3, 0xFFFFD45A);
-        g.fill(shackle, y + 1, shackle + 3, y + 7, 0xFFFFD45A);
-        g.fill(shackle + 5, y + 1, shackle + 8, y + 7, 0xFFFFD45A);
-        g.fill(x + 1, y + 6, x + 15, y + 15, 0xFFFFB52E);
-        g.fill(x + 3, y + 8, x + 13, y + 13, 0xFFFFD84D);
-        g.fill(x + 7, y + 9, x + 9, y + 12, 0xFF5A3418);
+        int metal = blocked ? 0xFFFF3030 : 0xFFFFD45A;
+        int body = blocked ? 0xFFB51F2A : 0xFFFFB52E;
+        int highlight = blocked ? 0xFFFF6464 : 0xFFFFD84D;
+        g.fill(shackle, y, shackle + 8, y + 3, metal);
+        g.fill(shackle, y + 1, shackle + 3, y + 7, metal);
+        g.fill(shackle + 5, y + 1, shackle + 8, y + 7, metal);
+        g.fill(x + 1, y + 6, x + 15, y + 15, body);
+        g.fill(x + 3, y + 8, x + 13, y + 13, highlight);
+        g.fill(x + 7, y + 9, x + 9, y + 12, blocked ? 0xFF650B12 : 0xFF5A3418);
     }
 
     @Override
