@@ -53,7 +53,7 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
             g.fill(cardX, cardY, cardX + 3, cardY + 22, i == 7 ? 0xFFFF922E : 0xFF526982);
             ItemStack stack = menu.getSlot(slotIndex).getItem();
             if (!stack.isEmpty()) {
-                drawLock(g, cardX + 8, cardY + 3, i == 0);
+                drawLock(g, cardX + 8, cardY + 3, stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()));
                 g.drawString(font, stack.getHoverName().getString(), cardX + 30, cardY + 7, 0xFF55FF55, false);
             }
         }
