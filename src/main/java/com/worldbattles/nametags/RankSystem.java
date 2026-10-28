@@ -11,6 +11,7 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -165,7 +166,7 @@ public final class RankSystem {
     public static void onNameFormat(NameFormat event) {
         Player player = event.getEntity();
         if (!allowedDimension(player)) return;
-        Component base = event.getUsername();
+        Component base = Component.literal(player.getGameProfile().getName()).withStyle(ChatFormatting.WHITE);
         event.setDisplayname(prefixFor(player).copy().append(base));
     }
 
@@ -173,7 +174,7 @@ public final class RankSystem {
     public static void onTabName(TabListNameFormat event) {
         Player player = event.getEntity();
         if (!allowedDimension(player)) return;
-        Component base = Component.literal(player.getGameProfile().getName());
+        Component base = Component.literal(player.getGameProfile().getName()).withStyle(ChatFormatting.WHITE);
         event.setDisplayName(prefixFor(player).copy().append(base));
     }
 
@@ -203,14 +204,16 @@ public final class RankSystem {
                     d.ensure(player.getUUID());
                     for (int i = 0; i < RANKS.length; i++) {
                         Rank r = RANKS[i];
-                        int slot = new int[]{10, 12, 14, 16, 28, 30, 32, 34}[i];
-                        ItemStack icon = new ItemStack(r.icon);
-                        MutableComponent title = Component.literal("[" + r.label.toUpperCase(Locale.ROOT) + "]").withStyle(r.color);
+                        // Liste verticale ; les seuls objets affichés sont les cadenas d'état.
+                        int[] slots = {10, 19, 28, 37, 46, 12, 21, 30};
+                        int slot = slots[i];
+                        boolean unlocked = d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile()));
+                        ItemStack icon = new ItemStack(unlocked ? Items.TRIPWIRE_HOOK : Items.IRON_TRAPDOOR);
+                        MutableComponent title = Component.literal((unlocked ? "[OUVERT] " : "[FERMÉ] ") + r.label.toUpperCase(Locale.ROOT)).withStyle(ChatFormatting.GOLD);
                         icon.setHoverName(title);
                         List<Component> lore = new ArrayList<>();
                         lore.add(Component.literal(r.price < 0 ? "Grade réservé aux administrateurs" : r.price == 0 ? "Prix : Gratuit" : "Prix : " + String.format(Locale.CANADA_FRENCH, "%,d", r.price) + " $").withStyle(ChatFormatting.GOLD));
-                        boolean unlocked = d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile()));
-                        lore.add(Component.literal(unlocked ? (d.selected(player.getUUID()).equals(r.id) ? "✓ Grade sélectionné" : "Déjà débloqué — cliquer pour choisir") : "Cliquer pour acheter").withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY));
+                        lore.add(Component.literal(unlocked ? (d.selected(player.getUUID()).equals(r.id) ? "✓ Grade sélectionné" : "Débloqué — cliquer pour choisir") : "Verrouillé — cliquer pour acheter").withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY));
                         CompoundTag tag = icon.getOrCreateTag();
                         ListTag loreTag = new ListTag();
                         for (Component line : lore) loreTag.add(StringTag.valueOf(Component.Serializer.toJson(line)));
@@ -251,6 +254,7 @@ public final class RankSystem {
                             current.select(target.getUUID(), r.id);
                             target.refreshDisplayName();
                             target.refreshTabListName();
+                            target.getServer().getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(java.util.EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME), java.util.List.of(target)));
                             target.sendSystemMessage(Component.literal("Grade sélectionné : ").withStyle(ChatFormatting.GOLD).append(Component.literal(r.label).withStyle(r.color)));
                             open(target);
                         };
