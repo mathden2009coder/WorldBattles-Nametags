@@ -208,7 +208,7 @@ public final class RankSystem {
                         int[] slots = {10, 11, 12, 13, 19, 20, 21, 22};
                         int slot = slots[i];
                         boolean unlocked = d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile()));
-                        ItemStack icon = new ItemStack(unlocked ? Items.TRIPWIRE_HOOK : Items.IRON_TRAPDOOR);
+                        ItemStack icon = new ItemStack(unlocked ? ModItems.RANK_LOCK_OPEN.get() : ModItems.RANK_LOCK_CLOSED.get());
                         MutableComponent title = Component.literal(r.label.toUpperCase(Locale.ROOT))
                             .withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY);
                         icon.setHoverName(title);
