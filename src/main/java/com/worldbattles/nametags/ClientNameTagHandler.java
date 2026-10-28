@@ -2,6 +2,7 @@ package com.worldbattles.nametags;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceKey;
@@ -30,7 +31,7 @@ public final class ClientNameTagHandler {
 
         ResourceKey<Level> currentDimension = localPlayer.level().dimension();
         if (Level.OVERWORLD.equals(currentDimension)) {
-            event.setCanceled(true);
+            event.setContent(Component.empty());
         }
     }
 }
