@@ -20,8 +20,8 @@ public class RankMenu extends AbstractContainerMenu {
         // Seven normal ranks stacked vertically; Admin stays separate on the right.
         for (int i = 0; i < 8; i++) {
             final int rankIndex = i;
-            int x = i == 7 ? 174 : 18;
-            int y = i == 7 ? 66 : 62 + i * 25;
+            int x = i == 7 ? 150 : 14;
+            int y = i == 7 ? 68 : 58 + i * 32;
             addSlot(new Slot(ranks, i, x, y) {
                 @Override public boolean mayPlace(ItemStack stack) { return false; }
             });
