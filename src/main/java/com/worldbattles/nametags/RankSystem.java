@@ -217,14 +217,23 @@ public final class RankSystem {
         final Rank selectedRank = rank;
         RankData d = data(target.getServer());
         d.ensure(target.getUUID());
-        d.setBlocked(target.getUUID(), selectedRank.id, blocked);
+        if (blocked) {
+            d.revoke(target.getUUID(), selectedRank.id);
+        } else {
+            d.setBlocked(target.getUUID(), selectedRank.id, false);
+            d.unlock(target.getUUID(), selectedRank.id);
+        }
         if (blocked && d.selected(target.getUUID()).equals(selectedRank.id)) {
             d.select(target.getUUID(), "novice");
             target.refreshDisplayName();
             target.refreshTabListName();
         }
-        target.sendSystemMessage(Component.literal("Le grade " + selectedRank.label + " a été " + (blocked ? "bloqué" : "débloqué") + " par un administrateur.").withStyle(blocked ? ChatFormatting.RED : ChatFormatting.GREEN));
-        source.sendSuccess(() -> Component.literal("Grade " + selectedRank.label + (blocked ? " bloqué pour " : " débloqué pour ") + target.getGameProfile().getName() + "."), true);
+        target.sendSystemMessage(Component.literal(blocked
+            ? "Le grade " + selectedRank.label + " a été retiré : tu dois le racheter pour le récupérer."
+            : "Le grade " + selectedRank.label + " a été rendu à ton compte.").withStyle(blocked ? ChatFormatting.RED : ChatFormatting.GREEN));
+        source.sendSuccess(() -> Component.literal(blocked
+            ? "Grade " + selectedRank.label + " retiré du compte de " + target.getGameProfile().getName() + "."
+            : "Grade " + selectedRank.label + " rendu au compte de " + target.getGameProfile().getName() + "."), true);
         return 1;
     }
 
@@ -328,25 +337,35 @@ public final class RankSystem {
 
     private static long shopBalance(ServerPlayer player) {
         try {
-            Class<?> dataClass = Class.forName("com.worldbattles.shop.ShopData", true, RankSystem.class.getClassLoader());
+            Class<?> dataClass = shopDataClass();
             Object shop = dataClass.getMethod("get", MinecraftServer.class).invoke(null, player.getServer());
-            return (long) dataClass.getMethod("balance", UUID.class).invoke(shop, player.getUUID());
-        } catch (Exception ex) {
+            Object value = dataClass.getMethod("balance", UUID.class).invoke(shop, player.getUUID());
+            return ((Number) value).longValue();
+        } catch (ReflectiveOperationException | LinkageError ex) {
             return -1L;
         }
     }
 
     private static boolean setShopBalance(ServerPlayer player, long value) {
         try {
-            Class<?> dataClass = Class.forName("com.worldbattles.shop.ShopData");
+            Class<?> dataClass = shopDataClass();
             Object shop = dataClass.getMethod("get", MinecraftServer.class).invoke(null, player.getServer());
             Object result = dataClass.getMethod("adminSet", UUID.class, String.class, long.class)
                 .invoke(shop, player.getUUID(), player.getGameProfile().getName(), value);
             Method success = result.getClass().getMethod("ok");
             return (boolean) success.invoke(result);
-        } catch (Exception ex) {
+        } catch (ReflectiveOperationException | LinkageError ex) {
             return false;
         }
+    }
+
+    private static Class<?> shopDataClass() throws ClassNotFoundException {
+        ClassLoader context = Thread.currentThread().getContextClassLoader();
+        if (context != null) {
+            try { return Class.forName("com.worldbattles.shop.ShopData", true, context); }
+            catch (ClassNotFoundException ignored) {}
+        }
+        return Class.forName("com.worldbattles.shop.ShopData", true, RankSystem.class.getClassLoader());
     }
 
     private static final class RankData extends SavedData {
@@ -404,6 +423,13 @@ public final class RankSystem {
         String selected(UUID id) { ensure(id); return selected.getOrDefault(id, "novice"); }
         boolean has(UUID id, String rank) { ensure(id); return unlocked.getOrDefault(id, Set.of()).contains(rank); }
         boolean isBlocked(UUID id, String rank) { ensure(id); return blocked.getOrDefault(id, Set.of()).contains(rank); }
+        void revoke(UUID id, String rank) {
+            ensure(id);
+            if (unlocked.computeIfAbsent(id, k -> new HashSet<>()).remove(rank)) setDirty();
+            if (Objects.equals(selected.get(id), rank)) select(id, "novice");
+            Set<String> blockedSet = blocked.computeIfAbsent(id, k -> new HashSet<>());
+            if (blockedSet.remove(rank)) setDirty();
+        }
         void setBlocked(UUID id, String rank, boolean value) {
             ensure(id);
             Set<String> set = blocked.computeIfAbsent(id, k -> new HashSet<>());
