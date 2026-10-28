@@ -204,16 +204,17 @@ public final class RankSystem {
                     d.ensure(player.getUUID());
                     for (int i = 0; i < RANKS.length; i++) {
                         Rank r = RANKS[i];
-                        // Liste verticale ; les seuls objets affichés sont les cadenas d'état.
-                        int[] slots = {10, 19, 28, 37, 46, 12, 21, 30};
+                        // Grille régulière en deux rangées pour éviter l'alignement décalé.
+                        int[] slots = {10, 11, 12, 13, 19, 20, 21, 22};
                         int slot = slots[i];
                         boolean unlocked = d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile()));
                         ItemStack icon = new ItemStack(unlocked ? Items.TRIPWIRE_HOOK : Items.IRON_TRAPDOOR);
-                        MutableComponent title = Component.literal((unlocked ? "[OUVERT] " : "[FERMÉ] ") + r.label.toUpperCase(Locale.ROOT)).withStyle(ChatFormatting.GOLD);
+                        MutableComponent title = Component.literal(r.label.toUpperCase(Locale.ROOT))
+                            .withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY);
                         icon.setHoverName(title);
                         List<Component> lore = new ArrayList<>();
                         lore.add(Component.literal(r.price < 0 ? "Grade réservé aux administrateurs" : r.price == 0 ? "Prix : Gratuit" : "Prix : " + String.format(Locale.CANADA_FRENCH, "%,d", r.price) + " $").withStyle(ChatFormatting.GOLD));
-                        lore.add(Component.literal(unlocked ? (d.selected(player.getUUID()).equals(r.id) ? "✓ Grade sélectionné" : "Débloqué — cliquer pour choisir") : "Verrouillé — cliquer pour acheter").withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY));
+                        lore.add(Component.literal(unlocked ? (d.selected(player.getUUID()).equals(r.id) ? "★ GRADE ACTIF" : "DEBLOQUE - Cliquer pour choisir") : "VERROUILLE - Cliquer pour acheter").withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.RED));
                         CompoundTag tag = icon.getOrCreateTag();
                         ListTag loreTag = new ListTag();
                         for (Component line : lore) loreTag.add(StringTag.valueOf(Component.Serializer.toJson(line)));
