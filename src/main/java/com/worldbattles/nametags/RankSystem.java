@@ -163,8 +163,7 @@ public final class RankSystem {
     @SubscribeEvent
     public static void onTabName(TabListNameFormat event) {
         if (!(event.getEntity() instanceof Player player) || !allowedDimension(player)) return;
-        Component base = event.getDisplayName();
-        if (base == null) base = player.getDisplayName();
+        Component base = Component.literal(player.getGameProfile().getName());
         event.setDisplayName(prefixFor(player).copy().append(base));
     }
 
