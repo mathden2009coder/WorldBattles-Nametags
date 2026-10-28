@@ -214,16 +214,17 @@ public final class RankSystem {
             source.sendFailure(Component.literal("Le grade novice ne peut pas être bloqué."));
             return 0;
         }
+        final Rank selectedRank = rank;
         RankData d = data(target.getServer());
         d.ensure(target.getUUID());
-        d.setBlocked(target.getUUID(), rank.id, blocked);
-        if (blocked && d.selected(target.getUUID()).equals(rank.id)) {
+        d.setBlocked(target.getUUID(), selectedRank.id, blocked);
+        if (blocked && d.selected(target.getUUID()).equals(selectedRank.id)) {
             d.select(target.getUUID(), "novice");
             target.refreshDisplayName();
             target.refreshTabListName();
         }
-        target.sendSystemMessage(Component.literal("Le grade " + rank.label + " a été " + (blocked ? "bloqué" : "débloqué") + " par un administrateur.").withStyle(blocked ? ChatFormatting.RED : ChatFormatting.GREEN));
-        source.sendSuccess(() -> Component.literal("Grade " + rank.label + (blocked ? " bloqué pour " : " débloqué pour ") + target.getGameProfile().getName() + "."), true);
+        target.sendSystemMessage(Component.literal("Le grade " + selectedRank.label + " a été " + (blocked ? "bloqué" : "débloqué") + " par un administrateur.").withStyle(blocked ? ChatFormatting.RED : ChatFormatting.GREEN));
+        source.sendSuccess(() -> Component.literal("Grade " + selectedRank.label + (blocked ? " bloqué pour " : " débloqué pour ") + target.getGameProfile().getName() + "."), true);
         return 1;
     }
 
