@@ -290,29 +290,29 @@ public final class RankSystem {
         boolean op = target.getServer().getPlayerList().isOp(target.getGameProfile());
         if (r.id.equals("admin") && !op) {
             target.sendSystemMessage(Component.literal("Ce grade est réservé aux administrateurs.").withStyle(ChatFormatting.RED));
-            open(target);
+            refreshOpenMenu(target);
             return;
         }
         if (current.isBlocked(target.getUUID(), r.id)) {
             target.sendSystemMessage(Component.literal("Ce grade a été bloqué par un administrateur.").withStyle(ChatFormatting.RED));
-            open(target);
+            refreshOpenMenu(target);
             return;
         }
         if (!current.has(target.getUUID(), r.id)) {
             if (r.id.equals("admin") || r.price < 0) {
                 target.sendSystemMessage(Component.literal("Ce grade ne peut pas être acheté.").withStyle(ChatFormatting.RED));
-                open(target);
+                refreshOpenMenu(target);
                 return;
             }
             long balance = shopBalance(target);
             if (balance < r.price) {
                 target.sendSystemMessage(Component.literal("Fonds insuffisants. Solde : " + Math.max(0, balance) + " $.").withStyle(ChatFormatting.RED));
-                open(target);
+                refreshOpenMenu(target);
                 return;
             }
             if (!setShopBalance(target, balance - r.price)) {
                 target.sendSystemMessage(Component.literal("Impossible de débiter le compte du Shop.").withStyle(ChatFormatting.RED));
-                open(target);
+                refreshOpenMenu(target);
                 return;
             }
             current.unlock(target.getUUID(), r.id);
@@ -323,12 +323,12 @@ public final class RankSystem {
         target.refreshTabListName();
         target.getServer().getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(java.util.EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME), java.util.List.of(target)));
         target.sendSystemMessage(Component.literal("Grade sélectionné : ").withStyle(ChatFormatting.GOLD).append(Component.literal(r.label).withStyle(r.color)));
-        open(target);
+        refreshOpenMenu(target);
     }
 
     private static long shopBalance(ServerPlayer player) {
         try {
-            Class<?> dataClass = Class.forName("com.worldbattles.shop.ShopData");
+            Class<?> dataClass = Class.forName("com.worldbattles.shop.ShopData", true, RankSystem.class.getClassLoader());
             Object shop = dataClass.getMethod("get", MinecraftServer.class).invoke(null, player.getServer());
             return (long) dataClass.getMethod("balance", UUID.class).invoke(shop, player.getUUID());
         } catch (Exception ex) {
