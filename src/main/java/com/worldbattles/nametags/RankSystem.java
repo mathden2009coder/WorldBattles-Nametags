@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -123,6 +125,21 @@ public final class RankSystem {
                 }
                 return 0;
             }));
+
+        event.getDispatcher().register(Commands.literal("gradeadmin")
+            .requires(source -> source.hasPermission(2))
+            .then(Commands.argument("joueur", EntityArgument.player())
+                .then(Commands.argument("grade", StringArgumentType.word())
+                    .suggests((ctx, builder) -> {
+                        for (Rank r : RANKS) builder.suggest(r.id);
+                        return builder.buildFuture();
+                    })
+                    .then(Commands.literal("bloquer").executes(ctx -> setRankBlocked(ctx.getSource(),
+                        EntityArgument.getPlayer(ctx, "joueur"), StringArgumentType.getString(ctx, "grade"), true)))
+                    .then(Commands.literal("debloquer").executes(ctx -> setRankBlocked(ctx.getSource(),
+                        EntityArgument.getPlayer(ctx, "joueur"), StringArgumentType.getString(ctx, "grade"), false)))
+                )
+            ));
     }
 
     @SubscribeEvent
@@ -184,6 +201,32 @@ public final class RankSystem {
         // PlayerEvent.NameFormat supplies the prefix for the chat sender component.
     }
 
+    private static int setRankBlocked(CommandSourceStack source, ServerPlayer target, String rankId, boolean blocked) {
+        Rank rank = null;
+        for (Rank candidate : RANKS) {
+            if (candidate.id.equalsIgnoreCase(rankId) || candidate.label.equalsIgnoreCase(rankId)) { rank = candidate; break; }
+        }
+        if (rank == null) {
+            source.sendFailure(Component.literal("Grade inconnu. Utilise : novice, debutant, adepte, combattant, conquerant, sage, fou ou admin."));
+            return 0;
+        }
+        if (rank.id.equals("novice")) {
+            source.sendFailure(Component.literal("Le grade novice ne peut pas être bloqué."));
+            return 0;
+        }
+        RankData d = data(target.getServer());
+        d.ensure(target.getUUID());
+        d.setBlocked(target.getUUID(), rank.id, blocked);
+        if (blocked && d.selected(target.getUUID()).equals(rank.id)) {
+            d.select(target.getUUID(), "novice");
+            target.refreshDisplayName();
+            target.refreshTabListName();
+        }
+        target.sendSystemMessage(Component.literal("Le grade " + rank.label + " a été " + (blocked ? "bloqué" : "débloqué") + " par un administrateur.").withStyle(blocked ? ChatFormatting.RED : ChatFormatting.GREEN));
+        source.sendSuccess(() -> Component.literal("Grade " + rank.label + (blocked ? " bloqué pour " : " débloqué pour ") + target.getGameProfile().getName() + "."), true);
+        return 1;
+    }
+
     private static void open(ServerPlayer player) {
         if (!allowedDimension(player)) {
             player.sendSystemMessage(Component.literal("Les grades sont disponibles uniquement dans Freelands et Minage.").withStyle(ChatFormatting.RED));
@@ -207,7 +250,8 @@ public final class RankSystem {
                         // Grille régulière en deux rangées pour éviter l'alignement décalé.
                         int[] slots = {10, 11, 12, 13, 19, 20, 21, 22};
                         int slot = slots[i];
-                        boolean unlocked = d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile()));
+                        boolean blocked = d.isBlocked(player.getUUID(), r.id);
+                        boolean unlocked = !blocked && (d.has(player.getUUID(), r.id) || (r.id.equals("admin") && player.getServer().getPlayerList().isOp(player.getGameProfile())));
                         ItemStack icon = new ItemStack(unlocked ? ModItems.RANK_LOCK_OPEN.get() : ModItems.RANK_LOCK_CLOSED.get());
                         MutableComponent title = Component.literal(r.label.toUpperCase(Locale.ROOT))
                             .withStyle(unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY);
@@ -229,6 +273,11 @@ public final class RankSystem {
                             boolean op = target.getServer().getPlayerList().isOp(target.getGameProfile());
                             if (r.id.equals("admin") && !op) {
                                 target.sendSystemMessage(Component.literal("Ce grade est réservé aux administrateurs.").withStyle(ChatFormatting.RED));
+                                open(target);
+                                return;
+                            }
+                            if (current.isBlocked(target.getUUID(), r.id)) {
+                                target.sendSystemMessage(Component.literal("Ce grade a été bloqué par un administrateur.").withStyle(ChatFormatting.RED));
                                 open(target);
                                 return;
                             }
@@ -304,6 +353,7 @@ public final class RankSystem {
     private static final class RankData extends SavedData {
         private final Map<UUID, String> selected = new HashMap<>();
         private final Map<UUID, Set<String>> unlocked = new HashMap<>();
+        private final Map<UUID, Set<String>> blocked = new HashMap<>();
 
         static RankData load(CompoundTag tag) {
             RankData d = new RankData();
@@ -319,6 +369,10 @@ public final class RankSystem {
                 for (int j = 0; j < ranks.size(); j++) set.add(ranks.getString(j));
                 set.add("novice");
                 d.unlocked.put(id, set);
+                Set<String> blockedSet = new HashSet<>();
+                ListTag blockedRanks = e.getList("Blocked", 8);
+                for (int j = 0; j < blockedRanks.size(); j++) blockedSet.add(blockedRanks.getString(j));
+                d.blocked.put(id, blockedSet);
             }
             return d;
         }
@@ -332,6 +386,9 @@ public final class RankSystem {
                 ListTag ranks = new ListTag();
                 for (String rank : unlocked.getOrDefault(id, Set.of("novice"))) ranks.add(StringTag.valueOf(rank));
                 e.put("Unlocked", ranks);
+                ListTag blockedRanks = new ListTag();
+                for (String rank : blocked.getOrDefault(id, Set.of())) blockedRanks.add(StringTag.valueOf(rank));
+                e.put("Blocked", blockedRanks);
                 entries.add(e);
             }
             tag.put("Players", entries);
@@ -347,6 +404,13 @@ public final class RankSystem {
         }
         String selected(UUID id) { ensure(id); return selected.getOrDefault(id, "novice"); }
         boolean has(UUID id, String rank) { ensure(id); return unlocked.getOrDefault(id, Set.of()).contains(rank); }
+        boolean isBlocked(UUID id, String rank) { ensure(id); return blocked.getOrDefault(id, Set.of()).contains(rank); }
+        void setBlocked(UUID id, String rank, boolean value) {
+            ensure(id);
+            Set<String> set = blocked.computeIfAbsent(id, k -> new HashSet<>());
+            boolean changed = value ? set.add(rank) : set.remove(rank);
+            if (changed) setDirty();
+        }
         void unlock(UUID id, String rank) { ensure(id); if (unlocked.computeIfAbsent(id, k -> new HashSet<>()).add(rank)) setDirty(); }
         void select(UUID id, String rank) { ensure(id); if (!Objects.equals(selected.get(id), rank)) { selected.put(id, rank); setDirty(); } }
     }
