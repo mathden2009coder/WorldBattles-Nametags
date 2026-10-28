@@ -30,7 +30,7 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(font, "WORLD BATTLES", 8, -10, 0xFFE6EDF7, false);
         g.drawString(font, "GRADES", 108, -10, 0xFFFFB34D, false);
-        g.drawString(font, "SOLDE / GRADES", 8, 8, 0xFFE6EDF7, false);
+        g.drawString(font, "SOLDE : " + String.format(java.util.Locale.CANADA_FRENCH, "%,d", menu.getBalance()) + " $", 8, 8, 0xFFFFB34D, false);
         g.drawString(font, "Clique sur un grade pour l'acheter ou le choisir", 8, 20, 0xFF9CAFC4, false);
         g.drawString(font, "INVENTAIRE", 8, 128, 0xFF9CAFC4, false);
     }
