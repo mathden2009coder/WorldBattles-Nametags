@@ -239,8 +239,16 @@ public final class RankSystem {
         d.ensure(player.getUUID());
         player.openMenu(new SimpleMenuProvider((id, inv, p) -> {
             RankMenu menu = new RankMenu(id, inv);
+            populateMenu(player, menu);
+            return menu;
+        }, Component.literal("WORLD BATTLES | GRADES")));
+    }
+
+    private static void populateMenu(ServerPlayer player, RankMenu menu) {
+            RankData d = data(player.getServer());
+            d.ensure(player.getUUID());
             long balance = shopBalance(player);
-            menu.setBalance(Math.max(0, balance));
+            menu.setBalance(balance);
             for (int i = 0; i < RANKS.length; i++) {
                 Rank r = RANKS[i];
                 if (r.id.equals("admin") && !player.getServer().getPlayerList().isOp(player.getGameProfile())) continue;
@@ -262,8 +270,13 @@ public final class RankSystem {
             ItemStack balanceItem = new ItemStack(Items.GOLD_INGOT);
             balanceItem.setHoverName(Component.literal("Solde : " + String.format(Locale.CANADA_FRENCH, "%,d", Math.max(0, balance)) + " $").withStyle(ChatFormatting.GOLD));
             // Balance is shown in the GUI header; no extra item is placed there.
-            return menu;
-        }, Component.literal("WORLD BATTLES | GRADES")));
+    }
+
+    private static void refreshOpenMenu(ServerPlayer player) {
+        if (player.containerMenu instanceof RankMenu menu) {
+            populateMenu(player, menu);
+            menu.broadcastChanges();
+        }
     }
 
     public static void handleRankClick(ServerPlayer target, int slot) {
