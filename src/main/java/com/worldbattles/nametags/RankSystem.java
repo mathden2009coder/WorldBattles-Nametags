@@ -310,7 +310,9 @@ public final class RankSystem {
                 lore.add(Component.literal(r.price < 0 ? "Réservé aux administrateurs" : r.price == 0 ? "Prix : Gratuit" : "Prix : " + String.format(Locale.CANADA_FRENCH, "%,d", r.price) + " $").withStyle(ChatFormatting.GOLD));
                 lore.add(Component.literal(blocked ? "Bloqué par un administrateur" : unlocked ? (d.selected(player.getUUID()).equals(r.id) ? "GRADE ACTIF" : "Débloqué — cliquer pour choisir") : "Verrouillé — cliquer pour acheter").withStyle(blocked ? ChatFormatting.RED : unlocked ? ChatFormatting.GREEN : ChatFormatting.GRAY));
                 CompoundTag tag = icon.getOrCreateTag();
-                tag.putBoolean("WorldBattlesRankBlocked", blocked);
+                // Red lock for every unowned rank (including ranks removed by an admin),
+                // except Novice, which is the free starter rank. Actual blocking remains separate.
+                tag.putBoolean("WorldBattlesRankBlocked", blocked || (!unlocked && !r.id.equals("novice")));
                 ListTag loreTag = new ListTag();
                 for (Component line : lore) loreTag.add(StringTag.valueOf(Component.Serializer.toJson(line)));
                 CompoundTag display = tag.getCompound("display");
