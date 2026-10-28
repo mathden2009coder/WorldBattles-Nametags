@@ -252,7 +252,7 @@ public final class RankSystem {
             source.sendFailure(Component.literal("Grade inconnu. Utilise : novice, debutant, adepte, combattant, conquerant, sage, fou ou admin."));
             return 0;
         }
-        if (rankToRemove.id.equals("novice")) {
+        if (selectedRank.id.equals("novice")) {
             source.sendFailure(Component.literal("Le grade novice ne peut pas être retiré."));
             return 0;
         }
