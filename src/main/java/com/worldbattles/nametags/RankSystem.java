@@ -228,7 +228,7 @@ public final class RankSystem {
         return 1;
     }
 
-    private static final int[] RANK_SLOTS = {10, 19, 28, 37, 46, 12, 21, 31};
+    private static final int[] RANK_SLOTS = {0, 1, 2, 3, 4, 5, 6, 7};
 
     private static void open(ServerPlayer player) {
         if (!allowedDimension(player)) {
@@ -261,7 +261,7 @@ public final class RankSystem {
             }
             ItemStack balanceItem = new ItemStack(Items.GOLD_INGOT);
             balanceItem.setHoverName(Component.literal("Solde : " + String.format(Locale.CANADA_FRENCH, "%,d", Math.max(0, balance)) + " $").withStyle(ChatFormatting.GOLD));
-            menu.setRankItem(4, balanceItem);
+            // Balance is shown in the GUI header; no extra item is placed there.
             return menu;
         }, Component.literal("WORLD BATTLES | GRADES")));
     }
