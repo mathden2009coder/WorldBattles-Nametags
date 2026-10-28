@@ -59,6 +59,7 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
             if (!stack.isEmpty()) {
                 boolean blocked = stack.getTag() != null && stack.getTag().getBoolean("WorldBattlesRankBlocked");
                 boolean selected = stack.getTag() != null && stack.getTag().getBoolean("WorldBattlesRankSelected");
+                boolean owned = stack.getTag() != null && stack.getTag().getBoolean("WorldBattlesRankOwned");
                 if (selected) {
                     // Orange outline and marker make the currently equipped rank easy to spot.
                     g.fill(cardX, cardY, cardX + cardW, cardY + 2, 0xFFFF922E);
@@ -70,7 +71,9 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
                 drawLock(g, cardX + 6, cardY + 6,
                     stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()), blocked);
                 g.drawString(font, stack.getHoverName().getString(), cardX + 26, cardY + 2, selected ? 0xFFFFB347 : 0xFF55FF55, false);
-                g.drawString(font, selected ? "✓ ACTIF" : rankPrice(i), cardX + 26, cardY + 16, selected ? 0xFFFF922E : 0xFFFFC66D, false);
+                String statusText = selected ? "✓ ACTIF" : owned ? "OBTENU" : rankPrice(i);
+                int statusColor = selected ? 0xFFFF922E : owned ? 0xFF55DD88 : 0xFFFFC66D;
+                g.drawString(font, statusText, cardX + 26, cardY + 16, statusColor, false);
             }
         }
 
