@@ -14,7 +14,7 @@ import org.lwjgl.glfw.GLFW;
  */
 public class RankScreen extends AbstractContainerScreen<RankMenu> {
     private static final int PANEL_W = 300;
-    private static final int PANEL_H = 300;
+    private static final int PANEL_H = 360;
 
     public RankScreen(RankMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -46,20 +46,22 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
         for (int i = 0; i < 8; i++) {
             int slotIndex = i;
             int cardX = i == 7 ? x + 174 : x + 18;
-            int cardY = i == 7 ? y + 66 : y + 62 + i * 25;
+            int cardY = i == 7 ? y + 72 : y + 62 + i * 36;
             int cardW = i == 7 ? 108 : 150;
-            boolean hover = mouseX >= cardX && mouseX < cardX + cardW && mouseY >= cardY && mouseY < cardY + 22;
-            g.fill(cardX, cardY, cardX + cardW, cardY + 22, hover ? 0xFF34465B : 0xFF1B2A3D);
-            g.fill(cardX, cardY, cardX + 3, cardY + 22, i == 7 ? 0xFFFF922E : 0xFF526982);
+            int cardH = 32;
+            boolean hover = mouseX >= cardX && mouseX < cardX + cardW && mouseY >= cardY && mouseY < cardY + cardH;
+            g.fill(cardX, cardY, cardX + cardW, cardY + cardH, hover ? 0xFF34465B : 0xFF1B2A3D);
+            g.fill(cardX, cardY, cardX + 3, cardY + cardH, i == 7 ? 0xFFFF922E : 0xFF526982);
             ItemStack stack = menu.getSlot(slotIndex).getItem();
             if (!stack.isEmpty()) {
-                drawLock(g, cardX + 8, cardY + 3, stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()));
-                g.drawString(font, stack.getHoverName().getString(), cardX + 30, cardY + 7, 0xFF55FF55, false);
+                drawLock(g, cardX + 8, cardY + 8, stack.is(com.worldbattles.nametags.ModItems.RANK_LOCK_OPEN.get()));
+                g.drawString(font, stack.getHoverName().getString(), cardX + 30, cardY + 4, 0xFF55FF55, false);
+                g.drawString(font, rankPrice(i), cardX + 30, cardY + 19, 0xFFFFC66D, false);
             }
         }
 
-        g.fill(x + 12, y + 270, x + PANEL_W - 12, y + 271, 0xFF34465B);
-        g.drawString(font, "Clique sur un grade pour le choisir", x + 20, y + 280, 0xFF9CAFC4, false);
+        g.fill(x + 12, y + 328, x + PANEL_W - 12, y + 329, 0xFF34465B);
+        g.drawString(font, "Clique sur un grade pour le choisir", x + 20, y + 338, 0xFF9CAFC4, false);
         int bx = x + PANEL_W - 74;
         int by = y + PANEL_H - 24;
         boolean closeHover = mouseX >= bx && mouseX < bx + 56 && mouseY >= by && mouseY < by + 16;
@@ -69,6 +71,19 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
         // Preserve vanilla packet-based slot clicks without rendering its chest UI.
         // Inventory slots are not drawn or exposed in this screen.
         renderTooltip(g, mouseX, mouseY);
+    }
+
+    private String rankPrice(int index) {
+        return switch (index) {
+            case 0 -> "GRATUIT";
+            case 1 -> "1 000 $";
+            case 2 -> "10 000 $";
+            case 3 -> "100 000 $";
+            case 4 -> "1 000 000 $";
+            case 5 -> "5 000 000 $";
+            case 6 -> "20 000 000 $";
+            default -> "ADMIN";
+        };
     }
 
     private void drawLock(GuiGraphics g, int x, int y, boolean open) {
