@@ -108,8 +108,6 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
                     return true;
                 }
             }
-            int x = (width - PANEL_W) / 2;
-            int y = (height - PANEL_H) / 2;
             int bx = x + PANEL_W - 74;
             int by = y + PANEL_H - 24;
             if (mouseX >= bx && mouseX < bx + 56 && mouseY >= by && mouseY < by + 16) onClose();
