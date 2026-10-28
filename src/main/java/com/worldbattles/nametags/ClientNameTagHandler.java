@@ -1,5 +1,6 @@
 package com.worldbattles.nametags;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
@@ -15,7 +16,7 @@ public final class ClientNameTagHandler {
     public static void onRenderNameTag(RenderNameTagEvent event) {
         if (event.getEntity() instanceof Player
                 && Level.OVERWORLD.equals(event.getEntity().level().dimension())) {
-            event.setCanceled(true);
+            event.setContent(Component.empty());
         }
     }
 }
