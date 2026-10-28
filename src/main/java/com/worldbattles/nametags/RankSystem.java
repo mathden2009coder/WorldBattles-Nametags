@@ -138,6 +138,8 @@ public final class RankSystem {
                         EntityArgument.getPlayer(ctx, "joueur"), StringArgumentType.getString(ctx, "grade"), true)))
                     .then(Commands.literal("debloquer").executes(ctx -> setRankBlocked(ctx.getSource(),
                         EntityArgument.getPlayer(ctx, "joueur"), StringArgumentType.getString(ctx, "grade"), false)))
+                    .then(Commands.literal("retirer").executes(ctx -> removeRank(ctx.getSource(),
+                        EntityArgument.getPlayer(ctx, "joueur"), StringArgumentType.getString(ctx, "grade"))))
                 )
             ));
     }
@@ -235,6 +237,44 @@ public final class RankSystem {
         source.sendSuccess(() -> Component.literal(blocked
             ? "Grade " + selectedRank.label + " retiré du compte de " + target.getGameProfile().getName() + "."
             : "Grade " + selectedRank.label + " rendu au compte de " + target.getGameProfile().getName() + "."), true);
+        return 1;
+    }
+
+    private static int removeRank(CommandSourceStack source, ServerPlayer target, String rankId) {
+        Rank selectedRank = null;
+        for (Rank candidate : RANKS) {
+            if (candidate.id.equalsIgnoreCase(rankId) || candidate.label.equalsIgnoreCase(rankId)) {
+                selectedRank = candidate;
+                break;
+            }
+        }
+        if (selectedRank == null) {
+            source.sendFailure(Component.literal("Grade inconnu. Utilise : novice, debutant, adepte, combattant, conquerant, sage, fou ou admin."));
+            return 0;
+        }
+        if (selectedRank.id.equals("novice")) {
+            source.sendFailure(Component.literal("Le grade novice ne peut pas être retiré."));
+            return 0;
+        }
+        RankData d = data(target.getServer());
+        d.ensure(target.getUUID());
+        boolean owned = d.has(target.getUUID(), selectedRank.id);
+        boolean wasSelected = d.selected(target.getUUID()).equals(selectedRank.id);
+        // Remove ownership without blocking the rank: it remains available to repurchase.
+        d.revoke(target.getUUID(), selectedRank.id);
+        d.setBlocked(target.getUUID(), selectedRank.id, false);
+        if (wasSelected) {
+            target.refreshDisplayName();
+            target.refreshTabListName();
+            target.getServer().getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(
+                java.util.EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME), java.util.List.of(target)));
+        }
+        target.sendSystemMessage(Component.literal(owned
+            ? "Le grade " + selectedRank.label + " a été retiré de ton compte. Tu peux le racheter dans le menu des grades."
+            : "Le grade " + selectedRank.label + " n'était pas acheté; il n'est pas bloqué et reste disponible à l'achat.")
+            .withStyle(ChatFormatting.YELLOW));
+        source.sendSuccess(() -> Component.literal("Grade " + selectedRank.label + " retiré du compte de "
+            + target.getGameProfile().getName() + " sans blocage; il peut être racheté."), true);
         return 1;
     }
 
