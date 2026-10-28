@@ -276,9 +276,7 @@ public final class RankSystem {
                 tag.put("display", display);
                 menu.setRankItem(RANK_SLOTS[i], icon);
             }
-            ItemStack balanceItem = new ItemStack(Items.GOLD_INGOT);
-            balanceItem.setHoverName(Component.literal("Solde : " + String.format(Locale.CANADA_FRENCH, "%,d", Math.max(0, balance)) + " $").withStyle(ChatFormatting.GOLD));
-            // Balance is shown in the GUI header; no extra item is placed there.
+            // Balance is displayed in the custom screen header.
     }
 
     private static void refreshOpenMenu(ServerPlayer player) {
@@ -314,8 +312,13 @@ public final class RankSystem {
                 return;
             }
             long balance = shopBalance(target);
+            if (balance < 0L) {
+                target.sendSystemMessage(Component.literal("Impossible de lire le solde de WorldBattles Shop.").withStyle(ChatFormatting.RED));
+                refreshOpenMenu(target);
+                return;
+            }
             if (balance < r.price) {
-                target.sendSystemMessage(Component.literal("Fonds insuffisants. Solde : " + Math.max(0, balance) + " $.").withStyle(ChatFormatting.RED));
+                target.sendSystemMessage(Component.literal("Fonds insuffisants. Solde : " + balance + " $.").withStyle(ChatFormatting.RED));
                 refreshOpenMenu(target);
                 return;
             }
@@ -360,12 +363,12 @@ public final class RankSystem {
     }
 
     private static Class<?> shopDataClass() throws ClassNotFoundException {
-        ClassLoader context = Thread.currentThread().getContextClassLoader();
-        if (context != null) {
-            try { return Class.forName("com.worldbattles.shop.ShopData", true, context); }
-            catch (ClassNotFoundException ignored) {}
-        }
-        return Class.forName("com.worldbattles.shop.ShopData", true, RankSystem.class.getClassLoader());
+        // Forge isolates mod class loaders. Resolve ShopData through the loaded
+        // WorldBattles Shop mod itself, rather than the Nametags class loader.
+        Object shopMod = ModList.get().getModObjectById(SHOP_MOD)
+            .orElseThrow(() -> new ClassNotFoundException("WorldBattles Shop mod is not loaded"));
+        ClassLoader shopLoader = shopMod.getClass().getClassLoader();
+        return Class.forName("com.worldbattles.shop.ShopData", true, shopLoader);
     }
 
     private static final class RankData extends SavedData {
