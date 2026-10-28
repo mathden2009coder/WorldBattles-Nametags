@@ -23,7 +23,7 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
         g.fill(x, y, x + imageWidth, y + 3, 0xFFFF922E);
         g.fill(x + 6, y + 6, x + imageWidth - 6, y + 29, 0xFF17263A);
         g.fill(x + 6, y + 31, x + imageWidth - 6, y + 32, 0xFF34465B);
-        super.renderBg(g, partialTick, mouseX, mouseY);
+        // Custom background is drawn above; no vanilla background texture needed.
     }
 
     @Override
