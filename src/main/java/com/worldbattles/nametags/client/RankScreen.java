@@ -38,7 +38,7 @@ public class RankScreen extends AbstractContainerScreen<RankMenu> {
 
         g.drawString(font, "WORLD BATTLES", x + 12, y + 17, 0xFFE6EDF7, false);
         g.drawString(font, "GRADES", x + 142, y + 17, 0xFFFF922E, false);
-        g.drawString(font, "SOLDE DU SHOP", x + 12, y + 34, 0xFF9CAFC4, false);
+        g.drawString(font, "Ton solde", x + 12, y + 34, 0xFF9CAFC4, false);
         String balanceText = menu.getBalance() < 0 ? "INDISPONIBLE"
             : String.format(java.util.Locale.FRANCE, "%,d", menu.getBalance()).replace('\u202f', ' ') + " $";
         g.drawString(font, balanceText, x + 100, y + 34,
